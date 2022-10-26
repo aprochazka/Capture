@@ -1,0 +1,7 @@
+../Core/Src/Camera.c:16:6:camInit	104	static
+../Core/Src/Camera.c:31:5:wCamReg	24	static
+../Core/Src/Camera.c:45:5:wCamRegs	104	static
+../Core/Src/Camera.c:64:5:wCamRegSPI	16	static
+../Core/Src/Camera.c:89:9:rCamSPI	24	static
+../Core/Src/Camera.c:101:5:setJPEG	80	static
+../Core/Src/Camera.c:110:6:snapPic	136	static
