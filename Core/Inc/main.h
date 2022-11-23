@@ -32,6 +32,7 @@ extern "C" {
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "stdint.h"
+#include "stdlib.h"
 #include "stdio.h"
 #include "string.h"
 #include "Camera.h"

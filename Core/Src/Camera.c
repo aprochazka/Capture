@@ -8,24 +8,7 @@
 #include "Camera.h"
 #include "main.h"
 
-uint8_t	Buf1[4096]={0}, Buf2[4096]={0};
-uint8_t	*picbuf = 0;
-uint32_t haveRev = 0;
 
-//Initialize camera by reverse engineering demo code for weaker chip on official github
-void camInit(I2C_HandleTypeDef hi2c1, SPI_HandleTypeDef hspi1){
-
-	wCamReg(hi2c1, 0x3008, 0x80); // RESET CHIP
-	wCamRegs(hi2c1, OV5642_QVGA_Preview);
-	wCamRegs(hi2c1, OV5642_JPEG_Capture_QSXGA);
-    wCamRegs(hi2c1, ov5642_320x240);
-    wCamReg(hi2c1, 0x3818, 0xa8); //TIMING CONTROL - ENABLE COMPRESSION, THUMBNAIL MODE DISABLE, VERTICAL FLIP, MIRROR OFF
-    wCamReg(hi2c1, 0x3621, 0x10); //REGISTER FOR CORRECT MIRROR FUNCTION
-    wCamReg(hi2c1, 0x3801, 0xb0); //TIMING HORIZONTAL START - ALSO FOR MIRROR
-    wCamReg(hi2c1, 0x4407, 0x04); // COMPRESSION CONTROL
-	wCamRegSPI(hspi1, 0x03, 0x02); // SET VSYNC POLARITY TO ACTIVE LOW
-
-}
 
 //edit single register
 int wCamReg(I2C_HandleTypeDef hi2c1, uint16_t regID, uint16_t data){
@@ -106,6 +89,19 @@ int setJPEG(I2C_HandleTypeDef hi2c1){
 	return 1;
 }
 
+//Initialize camera by reverse engineering demo code for weaker chip on official github
+void camInit(I2C_HandleTypeDef hi2c1, SPI_HandleTypeDef hspi1){
+	wCamReg(hi2c1, 0x3008, 0x80); // RESET CHIP
+	wCamRegs(hi2c1, OV5642_QVGA_Preview);
+	wCamRegs(hi2c1, OV5642_JPEG_Capture_QSXGA);
+	wCamRegs(hi2c1, ov5642_320x240);
+    wCamReg(hi2c1, 0x3818, 0xa8); //TIMING CONTROL - ENABLE COMPRESSION, THUMBNAIL MODE DISABLE, VERTICAL FLIP, MIRROR OFF
+    wCamReg(hi2c1, 0x3621, 0x10); //REGISTER FOR CORRECT MIRROR FUNCTION
+    wCamReg(hi2c1, 0x3801, 0xb0); //TIMING HORIZONTAL START - ALSO FOR MIRROR
+    wCamReg(hi2c1, 0x4407, 0x04); // COMPRESSION CONTROL
+	wCamRegSPI(hspi1, 0x03, 0x02); // SET VSYNC POLARITY TO ACTIVE LOW
+}
+
 //try to get any capture data back from camera module
 void snapPic(I2C_HandleTypeDef hi2c1, UART_HandleTypeDef huart2, SPI_HandleTypeDef hspi1){
 
@@ -116,6 +112,9 @@ void snapPic(I2C_HandleTypeDef hi2c1, UART_HandleTypeDef huart2, SPI_HandleTypeD
 			rCamSPI(hspi1, 0x1);
 
 			//reset flags
+			wCamRegSPI(hspi1, 0x04, 0x31);
+			wCamRegSPI(hspi1, 0x04, 0x31);
+			wCamRegSPI(hspi1, 0x04, 0x31);
 			wCamRegSPI(hspi1, 0x04, 0x31);
 
 			// set cam to test mode
@@ -135,6 +134,7 @@ void snapPic(I2C_HandleTypeDef hi2c1, UART_HandleTypeDef huart2, SPI_HandleTypeD
 			 	// FIFO_SIZE1,2,3 - 0x42, 43, 44
 				//len1 = read_reg(FIFO_SIZE1);
   	  	  	  	len1 = rCamSPI(hspi1, 0x42);
+  	  	  	  	len1 = rCamSPI(hspi1, 0x42);
 
 			 	//len2 = read_reg(FIFO_SIZE2);
   	  	  	  	len2 = rCamSPI(hspi1, 0x43);
@@ -146,8 +146,9 @@ void snapPic(I2C_HandleTypeDef hi2c1, UART_HandleTypeDef huart2, SPI_HandleTypeD
 
 			//sendlen = (length>=BUFFER_MAX_SIZE) ? BUFFER_MAX_SIZE : length;
 			uint32_t sendLen = (len>=4096) ? 4096 : len;
-			picbuf = Buf1;
-			haveRev = 0;
+
+			uint8_t * picbuf = malloc(40960 * sizeof(uint8_t));
+			memset(picbuf, 0, 40960);
 
 			//DMA1_RX(picbuf, sendlen);
 
@@ -157,27 +158,21 @@ void snapPic(I2C_HandleTypeDef hi2c1, UART_HandleTypeDef huart2, SPI_HandleTypeD
 
 				HAL_SPI_TransmitReceive(&hspi1, &BURST_FIFO_READ, picbuf, 1, HAL_MAX_DELAY);
 
-				//probably not correct usage of this function, but for this case it is working as we need -
-				//(just sending clock pulses and saving responses)
-				HAL_SPI_Receive_DMA(&hspi1, picbuf, sendLen);
+				HAL_SPI_Receive(&hspi1, picbuf, sendLen, HAL_MAX_DELAY);
 
 				//while(hspi1.State != HAL_SPI_STATE_READY){;}
 				HAL_Delay(1000); //delay to ensure full dma transmission
 
 				HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_SET);
 
-				int bufLen = strlen((char*)picbuf);
-				HAL_UART_Transmit(&huart2, picbuf, bufLen, HAL_MAX_DELAY);
+				//int bufLen = strlen((char*)picbuf);
+
+				HAL_UART_Transmit(&huart2, picbuf, sendLen, HAL_MAX_DELAY);
 
 				/*
 				 * THE ERROR IS THAT WE ONLY RECEIVE THIS DATA FROM CHIP:
-				 * 	ff d8 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f
-					10 11 12 13 14 15 16 17 18 19 1a 1b 1c 1d 1e 1f
-					20 21 22 23 24 25 26 27 28 29 2a 2b 2c 2d ff d9
-					ff d8 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f
-					10 11 12 13 14 15 16 17 18 19 1a 1b 1c 1d 1e 1f
-					20 21 22 23 24 25 26 27 28 29 2a 2b 2c 2d ff d9
-					ff d8 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f
+				 *
+				  	ff d8 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f
 					10 11 12 13 14 15 16 17 18 19 1a 1b 1c 1d 1e 1f
 					20 21 22 23 24 25 26 27 28 29 2a 2b 2c 2d ff d9
 					ff d8 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f

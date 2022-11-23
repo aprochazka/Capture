@@ -135,6 +135,8 @@ static const struct sensor_reg ov5642_320x240[]  =
 
 
 /**************************Large viewing angle, slow frame rate*************/
+
+//image windowing registers start
  {0x3800 ,0x1 },
  {0x3801 ,0xa8},
  {0x3802 ,0x0 },
@@ -143,24 +145,47 @@ static const struct sensor_reg ov5642_320x240[]  =
  {0x3805 ,0x20},
  {0x3806 ,0x7 },
  {0x3807 ,0x98},
+// image windowing registers end
+
+// DVP output horizontal width high byte start
  {0x3808 ,0x1 },
  {0x3809 ,0x40},
  {0x380a ,0x0 },
  {0x380b ,0xF0},
+// DVP output horizontal width high byte end
+
+// timing hts start
  {0x380c ,0xc },
  {0x380d ,0x80},
+// timing hts end
+
+// timing vts start
  {0x380e ,0x7 },
  {0x380f ,0xd0},
+// timing vts end
+
+//ISP special effects
  {0x5001 ,0x7f},
+
+// scale --default
  {0x5680 ,0x0 },
  {0x5681 ,0x0 },
+
+// scale
  {0x5682 ,0xA },
  {0x5683 ,0x20},
+
+//scale --default
  {0x5684 ,0x0 },
  {0x5685 ,0x0 },
+
+// scale
  {0x5686 ,0x7 },
  {0x5687 ,0x98},
+
+ //PLL - some clock stuff
  {0x3011 ,0x0F},  //bit[5:0] div
+
  {0xffff, 0xff},
 /**************************Large viewing angle, slow frame rate*************/
 };
