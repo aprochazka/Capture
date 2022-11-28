@@ -33,6 +33,7 @@
 
 #define BIT_MASK_7 0x7f
 #define BIT_MASK_23 0x07fffff
+
 struct sensor_reg {
 	uint16_t reg;
 	uint16_t val;
@@ -40,59 +41,56 @@ struct sensor_reg {
 
 static const struct sensor_reg OV5642_320x240[]  =
 {
-/**************************Large viewing angle, slow frame rate*************/
+	//image windowing registers start
+	//{0x3800 ,0x1 },	// default
+	{0x3801 ,0xa8},	// default: b4
+	//{0x3802 ,0x0 },	//default
+	//{0x3803 ,0xA },	// default
+	{0x3804 ,0xA },	//default: 08
+	{0x3805 ,0x20},	//default : 0
+	{0x3806 ,0x7 },	//default: 6
+	{0x3807 ,0x98},	// default: 0
+	// image windowing registers end
 
-//image windowing registers start
-//{0x3800 ,0x1 },	// default
- {0x3801 ,0xa8},	// default: b4
-//{0x3802 ,0x0 },	//default
-//{0x3803 ,0xA },	// default
- {0x3804 ,0xA },	//default: 08
- {0x3805 ,0x20},	//default : 0
- {0x3806 ,0x7 },	//default: 6
- {0x3807 ,0x98},	// default: 0
-// image windowing registers end
+	// DVP output horizontal width high byte start
+	{0x3808 ,0x1 },	//default: 8
+	{0x3809 ,0x40},	//default: 0
+	{0x380a ,0x0 },	//default: 6
+	{0x380b ,0xF0},	//default: 0
+	// DVP output horizontal width high byte end
 
-// DVP output horizontal width high byte start
- {0x3808 ,0x1 },	//default: 8
- {0x3809 ,0x40},	//default: 0
- {0x380a ,0x0 },	//default: 6
- {0x380b ,0xF0},	//default: 0
-// DVP output horizontal width high byte end
+	// timing hts start
+	{0x380c ,0xc },	//default: 6 -- bits[7:4] not used!!!
+	{0x380d ,0x80},	//default: 48
+	// timing hts end
 
-// timing hts start
- {0x380c ,0xc },	//default: 6 -- bits[7:4] not used!!!
- {0x380d ,0x80},	//default: 48
-// timing hts end
+	// timing vts start
+	{0x380e ,0x7 },	//default: 6
+	{0x380f ,0xd0},	//default: 18
+	// timing vts end
 
-// timing vts start
- {0x380e ,0x7 },	//default: 6
- {0x380f ,0xd0},	//default: 18
-// timing vts end
+	//ISP special effects
+	{0x5001 ,0x7f},	//default: 4f
 
-//ISP special effects
- {0x5001 ,0x7f},	//default: 4f
+	// scale --default
+	//{0x5680 ,0x0 },	//default: 0 -- bits[7:4] not used!!!
+	//{0x5681 ,0x0 },	//default: 0
 
-// scale --default
-//{0x5680 ,0x0 },	//default: 0 -- bits[7:4] not used!!!
-//{0x5681 ,0x0 },	//default: 0
+	// scale
+	{0x5682 ,0xA },	//default: 0 -- bits[7:4] not used!!!
+	{0x5683 ,0x20},	//default: 0
 
-// scale
- {0x5682 ,0xA },	//default: 0 -- bits[7:4] not used!!!
- {0x5683 ,0x20},	//default: 0
+	//scale --default
+	//{0x5684 ,0x0 },	//default: 0 -- bits[7:3] not used!!!
+	//{0x5685 ,0x0 },	//default: 0
 
-//scale --default
-//{0x5684 ,0x0 },	//default: 0 -- bits[7:3] not used!!!
-//{0x5685 ,0x0 },	//default: 0
+	// scale
+	{0x5686 ,0x7 },	//default: 0 -- bits[7:3] not used!!!
+	{0x5687 ,0x98},	//default: 0
 
-// scale
- {0x5686 ,0x7 },	//default: 0 -- bits[7:3] not used!!!
- {0x5687 ,0x98},	//default: 0
-
- //PLL - some clock stuff
- {0x3011 ,0x0F},  //bit[5:0] div -- bit[6] is reserved!!!
- {0xffff, 0xff},
-/**************************Large viewing angle, slow frame rate*************/
+	//PLL - some clock stuff
+	{0x3011 ,0x0F},  //bit[5:0] div -- bit[6] is reserved!!!
+	{0xffff, 0xff},
 };
 
 
@@ -102,7 +100,77 @@ static const struct sensor_reg OV5642_JPEG_Capture_QSXGA[]=
 	// 24 MHz input clock, 24Mhz pclk
 	// jpeg mode 7.5fps
 
-	{0x3503 ,0x07},	//AEC Manual Mode Control
+	{0x3003 ,0x00},	//Reset for Individual Block
+	{0x3005 ,0xff},	//Clock Enable Control
+	{0x3006 ,0xff},	//Clock Enable Control
+	{0x3007 ,0x3f},	//Clock Enable Control
+	{0x350c ,0x07},	//AEC VTS Output high bits
+	{0x350d ,0xd0},	//AEC VTS Output low bits
+	{0x3602 ,0xe4},	//Analog Control Registers
+	{0x3612 ,0xac},	//Analog Control Registers
+	{0x3613 ,0x44},	//Analog Control Registers
+	{0x3621 ,0x27},	//Array Control 01
+	{0x3622 ,0x08},	//Analog Control Registers
+	{0x3623 ,0x22},	//Analog Control Registers
+	{0x3604 ,0x60},	//Analog Control Registers
+	{0x3705 ,0xda},	//Analog Control Registers
+	{0x370a ,0x80},	//Analog Control Registers
+	{0x3801 ,0x8a},	//HS
+	{0x3803 ,0x0a},	//VS
+	{0x3804 ,0x0a},	//HW
+	{0x3805 ,0x20},	//HW
+	{0x3806 ,0x07},	//VH
+	{0x3807 ,0x98},	//VH
+	{0x3808 ,0x0a},	//DVPHO
+	{0x3809 ,0x20},	//DVPHO
+	{0x380a ,0x07},	//DVPVO
+	{0x380b ,0x98},	//DVPVO
+	{0x380c ,0x0c},	//HTS
+	{0x380d ,0x80},	//HTS
+	{0x380e ,0x07},	//VTS
+	{0x380f ,0xd0},	//VTS
+	{0x3810 ,0xc2},
+	{0x3815 ,0x44},
+	{0x3818 ,0xc8},	//Mirror NO, Compression enable
+	{0x3824 ,0x01},	//RSV
+	{0x3827 ,0x0a},	//RSV
+	{0x3a00 ,0x78},	//AEC System Control 0
+	{0x3a0d ,0x10},	//60 Hz Max Bands in One Frame
+	{0x3a0e ,0x0d},	//50 Hz Max Bands in One Frame
+	{0x3a10 ,0x32},	//Stable Range Low Limit (enter)
+	{0x3a1b ,0x3c},	//Stable Range High Limit (go out)
+	{0x3a1e ,0x32},	//Stable Range Low Limit (go out)
+	{0x3a11 ,0x80},	//Step Manual Mode, Fast Zone High Limit
+	{0x3a1f ,0x20},	//Step Manual Mode, Fast Zone Low Limit
+	{0x3a00 ,0x78},	//AEC System Control 0
+	{0x460b ,0x35},	//RSV VFIFO Control 0B
+	{0x471d ,0x00},	//DVP CONTROL 1D
+	{0x4713 ,0x03},	//COMPRESSION MODE SELECT mode3
+	{0x471c ,0x50},	//RSV
+	{0x5682 ,0x0a},	//AVG X END
+	{0x5683 ,0x20},	//AVG X END
+	{0x5686 ,0x07},	//AVG Y END
+	{0x5687 ,0x98},	//AVG Y END
+	{0x5001 ,0x4f},	//ISP CONTROL 01, UV adjust/Line stretch/UV average/Color matrix/AWB enable
+	{0x589b ,0x00}, //RSV
+	{0x589a ,0xc0},	//RSV
+	{0x4407 ,0x08},	//COMPRESSION CTRL07 Bit[5:0]: Quantization scale  0x02
+	{0x589b ,0x00},	//RSV
+	{0x589a ,0xc0},	//RSV
+	{0x3002 ,0x0c},	//Reset for Individual Block, Reset SFIFO/compression
+	{0x3002 ,0x00},	//Reset for Individual Block
+	{0x3503 ,0x00},	//AEC Manual Mode Control, Auto enable
+	//{0x3818, 0xa8},
+	//{0x3621, 0x17},
+	//{0x3801, 0xb0},
+	{0x5025, 0x80},
+	{0x3a0f, 0x48},
+	{0x3a10, 0x40},
+	{0x3a1b, 0x4a},
+	{0x3a1e, 0x3e},
+	{0x3a11, 0x70},
+	{0x3a1f, 0x20},
+	{0xffff, 0xff},{0x3503 ,0x07},	//AEC Manual Mode Control
 	{0x3000 ,0x00},	//SYSTEM RESET00
 	{0x3001 ,0x00},	//Reset for Individual Block
 	{0x3002 ,0x00},	//Reset for Individual Block
@@ -774,17 +842,15 @@ static const struct sensor_reg OV5642_QVGA_Preview[]  =
 	{0x568e ,0xaa},
 	{0x568f ,0xaa},
 
-
-
 	{0xffff,0xff},
 };
 
 static const struct sensor_reg OV5642_Init_Tail[]  =
 {
- {0x3818, 0xa8}, //TIMING CONTROL - ENABLE COMPRESSION, THUMBNAIL MODE DISABLE, VERTICAL FLIP, MIRROR OFF
- {0x3621, 0x10}, //REGISTER FOR CORRECT MIRROR FUNCTION
- {0x3801, 0xb0}, //TIMING HORIZONTAL START - ALSO FOR MIRROR
- {0x4407, 0x04}, // COMPRESSION CONTROL
+	{0x3818, 0xa8}, //TIMING CONTROL - ENABLE COMPRESSION, THUMBNAIL MODE DISABLE, VERTICAL FLIP, MIRROR OFF
+	{0x3621, 0x10}, //REGISTER FOR CORRECT MIRROR FUNCTION
+	{0x3801, 0xb0}, //TIMING HORIZONTAL START - ALSO FOR MIRROR
+	{0x4407, 0x04}, // COMPRESSION CONTROL
 };
 
 

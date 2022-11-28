@@ -8,16 +8,60 @@
 #include "Camera.h"
 #include "main.h"
 
-void spiStart(){
-	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_RESET);
+//Initialize camera by reverse engineering demo code for weaker chip on official github
+void camInit(I2C_HandleTypeDef hi2c1, SPI_HandleTypeDef hspi1){
+	resetCam(hi2c1);
+
+	wCamRegs(hi2c1, OV5642_QVGA_Preview);
+	wCamRegs(hi2c1, OV5642_JPEG_Capture_QSXGA);
+	wCamRegs(hi2c1, OV5642_320x240);
+
+    wCamRegs(hi2c1, OV5642_Init_Tail);
+
+    // TODO: consult if this is the problematic register
+	wCamRegSPI(hspi1, 0x03, 0x02); // SET VSYNC POLARITY TO ACTIVE LOW
+}
+
+//try to get any capture data back from camera module
+void snapPic(I2C_HandleTypeDef hi2c1, UART_HandleTypeDef huart2, SPI_HandleTypeDef hspi1){
+
+	resetFifoFlags(hspi1);
+	resetCapDoneFlag(hspi1);
+
+	setCaptureCount(hspi1, 1);
+
+	startCapture(hspi1);
+
+	//wait for capture done
+	while(1){
+		uint8_t regValue = rCamSPI(hspi1, CAPTURE_DONE_REG);
+		uint8_t captureDoneMask = CAPTURE_DONE_MASK;
+		if(regValue & captureDoneMask) break;
+	}
+
+	uint32_t fifoLen = getFifoLen(hspi1);
+	uint32_t sendLen = (fifoLen>=4096) ? 4096 : fifoLen;
+
+	int buffSize = 4096;
+	uint8_t * picbuf = malloc(buffSize * sizeof(uint8_t));
+	memset(picbuf, 0, buffSize);
+
+	spiStart();
+
+	uint8_t BURST_FIFO_READ = 0x3c;
+	HAL_SPI_TransmitReceive(&hspi1, &BURST_FIFO_READ, picbuf, 1, HAL_MAX_DELAY);
+
+	HAL_SPI_Receive(&hspi1, picbuf, sendLen, HAL_MAX_DELAY);
+
+	//TODO: remove delay
+	//while(hspi1.State != HAL_SPI_STATE_READY){;}
+	HAL_Delay(1000); //delay to ensure full dma transmission
+
+	spiEnd();
+
+	HAL_UART_Transmit(&huart2, picbuf, sendLen, HAL_MAX_DELAY);
 };
 
-void spiEnd(){
-	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_SET);
-};
-
-
-// rewrite single i2c register
 HAL_StatusTypeDef wCamReg(I2C_HandleTypeDef hi2c1, uint16_t regID, uint16_t data){
 	HAL_StatusTypeDef ret;
 
@@ -33,7 +77,6 @@ HAL_StatusTypeDef wCamReg(I2C_HandleTypeDef hi2c1, uint16_t regID, uint16_t data
 	return ret;
 };
 
-// rewrite multiple i2c registers
 HAL_StatusTypeDef wCamRegs(I2C_HandleTypeDef hi2c1, const struct sensor_reg regList[])
 {
 
@@ -58,7 +101,10 @@ HAL_StatusTypeDef wCamRegs(I2C_HandleTypeDef hi2c1, const struct sensor_reg regL
 	return HAL_OK;
 };
 
-// rewrite single spi register
+void resetCam(I2C_HandleTypeDef hi2c1){
+	wCamReg(hi2c1, RESET_REG, RESET_VAL);
+};
+
 HAL_StatusTypeDef wCamRegSPI(SPI_HandleTypeDef hspi1, uint8_t addr, uint8_t data){
 
 	HAL_StatusTypeDef ret;
@@ -110,23 +156,13 @@ uint8_t rCamSPI(SPI_HandleTypeDef hspi1, uint8_t addr){
 	return dataFromReg;
 }
 
-void resetCam(I2C_HandleTypeDef hi2c1){
-	wCamReg(hi2c1, RESET_REG, RESET_VAL);
+void spiStart(){
+	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_RESET);
 };
 
-//Initialize camera by reverse engineering demo code for weaker chip on official github
-void camInit(I2C_HandleTypeDef hi2c1, SPI_HandleTypeDef hspi1){
-	resetCam(hi2c1);
-
-	wCamRegs(hi2c1, OV5642_QVGA_Preview);
-	wCamRegs(hi2c1, OV5642_JPEG_Capture_QSXGA);
-	wCamRegs(hi2c1, OV5642_320x240);
-
-    wCamRegs(hi2c1, OV5642_Init_Tail);
-
-    // TODO: consult if this is the problematic register
-	wCamRegSPI(hspi1, 0x03, 0x02); // SET VSYNC POLARITY TO ACTIVE LOW
-}
+void spiEnd(){
+	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0, GPIO_PIN_SET);
+};
 
 void resetFifoFlags(SPI_HandleTypeDef hspi1){
 	wCamRegSPI(hspi1, FIFO_REG, FIFO_POINTER_RESET);
@@ -156,42 +192,4 @@ uint32_t getFifoLen(SPI_HandleTypeDef hspi1){
 	return len;
 };
 
-//try to get any capture data back from camera module
-void snapPic(I2C_HandleTypeDef hi2c1, UART_HandleTypeDef huart2, SPI_HandleTypeDef hspi1){
 
-	resetFifoFlags(hspi1);
-	resetCapDoneFlag(hspi1);
-
-	setCaptureCount(hspi1, 1);
-
-	startCapture(hspi1);
-
-	//wait for capture done
-	while(1){
-		uint8_t regValue = rCamSPI(hspi1, CAPTURE_DONE_REG);
-		uint8_t captureDoneMask = CAPTURE_DONE_MASK;
-		if(regValue & captureDoneMask) break;
-	}
-
-	uint32_t fifoLen = getFifoLen(hspi1);
-	uint32_t sendLen = (fifoLen>=4096) ? 4096 : fifoLen;
-
-	int buffSize = 4096;
-	uint8_t * picbuf = malloc(buffSize * sizeof(uint8_t));
-	memset(picbuf, 0, buffSize);
-
-	spiStart();
-
-	uint8_t BURST_FIFO_READ = 0x3c;
-	HAL_SPI_TransmitReceive(&hspi1, &BURST_FIFO_READ, picbuf, 1, HAL_MAX_DELAY);
-
-	HAL_SPI_Receive(&hspi1, picbuf, sendLen, HAL_MAX_DELAY);
-
-	//TODO: remove delay
-	//while(hspi1.State != HAL_SPI_STATE_READY){;}
-	HAL_Delay(1000); //delay to ensure full dma transmission
-
-	spiEnd();
-
-	HAL_UART_Transmit(&huart2, picbuf, sendLen, HAL_MAX_DELAY);
-};
