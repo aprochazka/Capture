@@ -111,7 +111,7 @@ int main(void)
   //Initialize module for simple low res single jpeg capture
   camInit(hi2c1, hspi1);
 
-  //Try to capture picture and send first 4096 bytes of picture data to uart
+  //Try to capture picture and send picture data to uart
   snapPic(hi2c1, huart2, hspi1);
 
   /* USER CODE END 2 */
@@ -120,6 +120,8 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

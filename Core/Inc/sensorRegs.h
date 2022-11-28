@@ -9,10 +9,92 @@
 #define INC_SENSORREGS_H_
 #include "main.h"
 
+//TODO: make every reg value in defines binary instead of hex
+
+#define END_OF_REG_LIST_DATA 0xff
+#define END_OF_REG_LIST_ID	0xffff
+
+#define RESET_REG 0x3008
+#define RESET_VAL 0b10000000
+
+#define FIFO_REG 0x04
+#define FIFO_WRITE_DONE_CLEAR 0b1
+#define FIFO_POINTER_RESET 0b110000
+#define START_CAPTURE 0b10
+
+#define FIFO_SIZE_7_0 0x42
+#define FIFO_SIZE_15_8 0x43
+#define FIFO_SIZE_22_16 0x44
+
+#define CAPTURE_REG 0x01
+
+#define CAPTURE_DONE_REG 0x41
+#define CAPTURE_DONE_MASK 0b1000;
+
+#define BIT_MASK_7 0x7f
+#define BIT_MASK_23 0x07fffff
 struct sensor_reg {
 	uint16_t reg;
 	uint16_t val;
 };
+
+static const struct sensor_reg OV5642_320x240[]  =
+{
+/**************************Large viewing angle, slow frame rate*************/
+
+//image windowing registers start
+//{0x3800 ,0x1 },	// default
+ {0x3801 ,0xa8},	// default: b4
+//{0x3802 ,0x0 },	//default
+//{0x3803 ,0xA },	// default
+ {0x3804 ,0xA },	//default: 08
+ {0x3805 ,0x20},	//default : 0
+ {0x3806 ,0x7 },	//default: 6
+ {0x3807 ,0x98},	// default: 0
+// image windowing registers end
+
+// DVP output horizontal width high byte start
+ {0x3808 ,0x1 },	//default: 8
+ {0x3809 ,0x40},	//default: 0
+ {0x380a ,0x0 },	//default: 6
+ {0x380b ,0xF0},	//default: 0
+// DVP output horizontal width high byte end
+
+// timing hts start
+ {0x380c ,0xc },	//default: 6 -- bits[7:4] not used!!!
+ {0x380d ,0x80},	//default: 48
+// timing hts end
+
+// timing vts start
+ {0x380e ,0x7 },	//default: 6
+ {0x380f ,0xd0},	//default: 18
+// timing vts end
+
+//ISP special effects
+ {0x5001 ,0x7f},	//default: 4f
+
+// scale --default
+//{0x5680 ,0x0 },	//default: 0 -- bits[7:4] not used!!!
+//{0x5681 ,0x0 },	//default: 0
+
+// scale
+ {0x5682 ,0xA },	//default: 0 -- bits[7:4] not used!!!
+ {0x5683 ,0x20},	//default: 0
+
+//scale --default
+//{0x5684 ,0x0 },	//default: 0 -- bits[7:3] not used!!!
+//{0x5685 ,0x0 },	//default: 0
+
+// scale
+ {0x5686 ,0x7 },	//default: 0 -- bits[7:3] not used!!!
+ {0x5687 ,0x98},	//default: 0
+
+ //PLL - some clock stuff
+ {0x3011 ,0x0F},  //bit[5:0] div -- bit[6] is reserved!!!
+ {0xffff, 0xff},
+/**************************Large viewing angle, slow frame rate*************/
+};
+
 
 static const struct sensor_reg OV5642_JPEG_Capture_QSXGA[]=
 {
@@ -98,97 +180,6 @@ static const struct sensor_reg OV5642_JPEG_Capture_QSXGA[]=
 
 };
 
-static const struct sensor_reg ov5642_320x240[]  =
-{
-/**************************Small viewing angle and fast frame rate*************/
-//	{0x3800 ,0x4 },
-//	{0x3801 ,0xb0},
-//	{0x3802 ,0x2 },
-//	{0x3803 ,0xbc},
-//	{0x3804 ,0x6 },
-//	{0x3805 ,0x40},
-//	{0x3806 ,0x4 },
-//	{0x3807 ,0xb0},
-//	{0x3808 ,0x1 },
-//	{0x3809 ,0x40},
-//	{0x380a ,0x0 },
-//	{0x380b ,0xF0},
-//	{0x380c ,0xb },
-//	{0x380d ,0x20},
-//	{0x380e ,0x7 },
-//	{0x380f ,0xD0},
-//	{0x5001 ,0x7f},
-//	{0x5680 ,0x4 },
-//	{0x5681 ,0xb0},
-//	{0x5682 ,0x6},
-//	{0x5683 ,0x40},
-//	{0x5684 ,0x2 },
-//	{0x5685 ,0xbc},
-//	{0x5686 ,0x4 },
-//	{0x5687 ,0xb0},
-//	{0x3011 ,0x0F},  //bit[5:0] div
-//	{0xffff, 0xff},
-/**************************Small viewing angle and fast frame rate*************/
-
-
-
-
-
-/**************************Large viewing angle, slow frame rate*************/
-
-//image windowing registers start
- {0x3800 ,0x1 },
- {0x3801 ,0xa8},
- {0x3802 ,0x0 },
- {0x3803 ,0xA },
- {0x3804 ,0xA },
- {0x3805 ,0x20},
- {0x3806 ,0x7 },
- {0x3807 ,0x98},
-// image windowing registers end
-
-// DVP output horizontal width high byte start
- {0x3808 ,0x1 },
- {0x3809 ,0x40},
- {0x380a ,0x0 },
- {0x380b ,0xF0},
-// DVP output horizontal width high byte end
-
-// timing hts start
- {0x380c ,0xc },
- {0x380d ,0x80},
-// timing hts end
-
-// timing vts start
- {0x380e ,0x7 },
- {0x380f ,0xd0},
-// timing vts end
-
-//ISP special effects
- {0x5001 ,0x7f},
-
-// scale --default
- {0x5680 ,0x0 },
- {0x5681 ,0x0 },
-
-// scale
- {0x5682 ,0xA },
- {0x5683 ,0x20},
-
-//scale --default
- {0x5684 ,0x0 },
- {0x5685 ,0x0 },
-
-// scale
- {0x5686 ,0x7 },
- {0x5687 ,0x98},
-
- //PLL - some clock stuff
- {0x3011 ,0x0F},  //bit[5:0] div
-
- {0xffff, 0xff},
-/**************************Large viewing angle, slow frame rate*************/
-};
 
 static const struct sensor_reg OV5642_QVGA_Preview[]  =
 {
@@ -787,5 +778,14 @@ static const struct sensor_reg OV5642_QVGA_Preview[]  =
 
 	{0xffff,0xff},
 };
+
+static const struct sensor_reg OV5642_Init_Tail[]  =
+{
+ {0x3818, 0xa8}, //TIMING CONTROL - ENABLE COMPRESSION, THUMBNAIL MODE DISABLE, VERTICAL FLIP, MIRROR OFF
+ {0x3621, 0x10}, //REGISTER FOR CORRECT MIRROR FUNCTION
+ {0x3801, 0xb0}, //TIMING HORIZONTAL START - ALSO FOR MIRROR
+ {0x4407, 0x04}, // COMPRESSION CONTROL
+};
+
 
 #endif /* INC_SENSORREGS_H_ */
